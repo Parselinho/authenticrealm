@@ -1,0 +1,23 @@
+{
+  "name": "authframework",
+  "version": "1.0.0",
+  "description": "This authentication framework provides a comprehensive solution for handling user authentication and authorization in Node.js applications. It includes support for user registration, login, email verification, password reset, and role-based access control.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@sendgrid/mail": "^8.1.0",
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-async-errors": "^3.1.1",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.0.3",
+    "nodemailer": "^6.9.7",
+    "validator": "^13.11.0"
+  }
+}
