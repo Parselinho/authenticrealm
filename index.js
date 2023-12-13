@@ -1,4 +1,5 @@
 require("dotenv").config();
+require("express-async-errors");
 const AuthService = require("./services/AuthService");
 const UserService = require("./services/UserService");
 const RegisterService = require("./services/RegisterService");
