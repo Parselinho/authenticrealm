@@ -75,22 +75,29 @@ cookiesHandler: Utility function to handle setting authentication tokens as cook
 
 **User Registration:**
 \*\*\*\* To register a new user
+
+```
 const { RegisterService } = require('AuthenticRealm');
 const registerService = new RegisterService(User, EmailService);
 
 // In your route handler
 await registerService.registerUser(req.body);
+```
 
 **User Login**
 \*\*\*\* To authenticate a user:
 
+```
 const { AuthService } = require('AuthenticRealm');
 const authService = new AuthService();
 
 // In your route handler
 const user = await authService.login(email, password, req, res);
+```
 
 **UserService Method Example:**
+
+```
 // Import UserService
 const { UserService } = require('AuthenticRealm');
 const userService = new UserService(User);
@@ -100,16 +107,22 @@ const updateUserDetails = async (req, res) => {
 const updatedUser = await userService.updateUser(req.user.id, req.body.email, req.body.name);
 res.status(200).json({ message: "User updated successfully.", user: updatedUser });
 };
+```
 
 **Protecting Routes**
 \*\*\*\* To protect routes using authentication and authorization middleware:
+
+```
 const { authenticateUser, authorizePermissions } = require('AuthenticRealm');
 
 router.get('/protected-route', authenticateUser, authorizePermissions('admin'), (req, res) => {
 // Protected route logic
 });
+```
 
 **User verification:**
+
+```
 // In your Express route handler
 router.post('/verify-email', async (req, res) => {
 const { verificationToken, email } = req.body;
@@ -125,8 +138,11 @@ res.status(200).json({ message: "Email successfully verified." });
 res.status(500).json({ message: error.message });
 }
 });
+```
 
 **Pasword Reset Request**:
+
+```
 // In your Express route handler
 router.post('/forgot-password', async (req, res) => {
 const { email } = req.body;
@@ -144,8 +160,11 @@ message: "If an account with the provided email exists, a password reset link ha
 res.status(500).json({ message: error.message });
 }
 });
+```
 
 **Resetting Password:**
+
+```
 // In your Express route handler
 router.post('/reset-password', async (req, res) => {
 const { token, email, password } = req.body;
@@ -160,8 +179,11 @@ res.status(200).json({ message: "Your password has been successfully reset." });
 res.status(500).json({ message: error.message });
 }
 });
+```
 
 **Using Cookies:**
+
+```
 // Import cookiesHandler from your framework
 const { cookiesHandler } = require('AuthenticRealm');
 
@@ -170,8 +192,11 @@ const user = ...; // User object after authentication
 cookiesHandler({ res, user });
 
 // This sets access and refresh tokens as HTTP-only cookies in the response
+```
 
 **Handling Errors:**
+
+```
 // Import error classes
 const { NotFound, BadRequest, Unauthorized } = require('AuthenticRealm');
 
@@ -195,8 +220,11 @@ throw new NotFound("User not found.");
     res.status(200).json({ user });
 
 };
+```
 
 **Using Session Middleware:**
+
+```
 // Import sessionTransactionMiddleware
 const { sessionTransactionMiddleware } = require('AuthenticRealm');
 
@@ -211,6 +239,7 @@ res.status(200).json({ message: "User updated successfully.", user: updatedUser 
 
 // Use 'updateUser' in your route definition
 router.patch('/user/update', authenticateUser, updateUser);
+```
 
 **User Model Methods:**
 
