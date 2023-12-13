@@ -20,19 +20,25 @@ Basic understanding of Express.js and Mongoose
 **Quick Start**
 Install AuthenticRealm
 
+```
 npm install authenticrealm
+```
 
 \*\*\*\*Environment Setup
 Create a .env file in your project root:
 
+```
 JWT_SECRET=your_jwt_secret
 SENDGRID_API_KEY=your_sendgrid_api_key
+```
 
+```
 const { authenticateUser } = require('AuthenticRealm');
 
 app.get('/protected', authenticateUser, (req, res) => {
 res.send('Protected content');
 });
+```
 
 **OverView:**
 This authentication framework provides a comprehensive solution for handling user authentication and authorization in Node.js applications. It includes support for user registration, login, email verification, password reset, and role-based access control.
