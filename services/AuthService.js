@@ -1,10 +1,10 @@
 // AuthService.js
 
 // Import necessary models and utilities
+const User = require("../models/User");
 const Token = require("../models/Token");
 const crypto = require("crypto");
 const cookiesHandler = require("../utils/cookies");
-const { User } = require("../models/User");
 const { Unauthenticated, BadRequest } = require("../errors");
 
 // AuthService class definition
