@@ -77,6 +77,22 @@ EmailService: Service for sending emails using SendGrid.
 checkPermissions: Utility function to check user permissions.
 cookiesHandler: Utility function to handle setting authentication tokens as cookies.
 
+**Before you start: Special NOTE**
+
+**EmailService Customization**
+
+In the EmailService class, you need to customize the this.fromEmail and this.origin fields to match your application's details. These fields are used when sending out verification and password reset emails.
+
+**this.fromEmail**: Set this to the email address you wish to use as the sender for your emails. For example: "YourName <youremail@example.com>".
+this.origin: This should be set to the base URL of your application. It's used for creating links in the email content, such as verification links or password reset links.
+
+**Customizing Verification and Reset Email URLs**
+
+In the EmailService methods **sendVerificationEmail and sendResetPasswordEmail**, ensure you adjust the URLs in the verifyEmailUrl and resetURL variables to match the routes in your application.
+
+**verifyEmailUrl**: The URL for email verification. It should point to the route in your application that handles email verification.
+**resetURL:** The URL for password reset. It should direct the user to the password reset page in your application.
+
 **Usage**
 
 **User Registration:**
@@ -322,3 +338,6 @@ The framework depends on several npm packages like 'express', 'mongoose', 'jsonw
 
 **Support and Contact**
 For support or feedback, please contact nextgencodeworks@gmail.com.
+
+**Special Thanks**
+A special thanks to **John Smilga** for his invaluable contributions and insights. This package draws inspiration from his code and teachings in the realm of web development. His work has been instrumental in shaping various aspects of this framework.
