@@ -1,4 +1,5 @@
 const sgMail = require("@sendgrid/mail");
+const { CustomError } = require("../errors");
 
 /**
  * EmailService class to handle email operations using SendGrid.
@@ -29,14 +30,19 @@ class EmailService {
    * @param {String} param0.html - The HTML content of the email.
    */
   async sendEmail({ to, subject, html }) {
-    const msg = {
-      from: this.fromEmail,
-      to,
-      subject,
-      html,
-    };
-    // Send the email using SendGrid
-    await sgMail.send(msg);
+    try {
+      const msg = {
+        from: this.fromEmail,
+        to,
+        subject,
+        html,
+      };
+      // Send the email using SendGrid
+      await sgMail.send(msg);
+    } catch (error) {
+      console.error("error sending email:", error);
+      throw new CustomError("Failed to send email.");
+    }
   }
 
   /**

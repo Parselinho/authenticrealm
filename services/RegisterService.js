@@ -26,29 +26,28 @@ class RegisterService {
    * @throws {BadRequest} If the email already exists in the database.
    */
   async registerUser({ name, email, password }, session) {
-    // Check if a user with the given email already exists
-    const emailAlreadyExist = await this.User.findOne({ email }).session(
-      session
-    );
-    if (emailAlreadyExist) {
-      throw new BadRequest("User already exists");
+    try {
+      const emailAlreadyExist = await this.User.findOne({ email }).session(
+        session
+      );
+      if (emailAlreadyExist) {
+        throw new BadRequest("User already exists");
+      }
+
+      const isFirstAccount =
+        (await this.User.countDocuments({}).session(session)) === 0;
+      const role = isFirstAccount ? "admin" : "user";
+      const user = new this.User({ name, email, password, role });
+      user.generateVerificationToken();
+
+      await this.EmailService.sendVerificationEmail(user);
+
+      await user.save({ session });
+      return user;
+    } catch (error) {
+      console.error("Error in registerService", error);
+      throw error;
     }
-
-    // Determine if the new account is the first account, assigning 'admin' role if true
-    const isFirstAccount =
-      (await this.User.countDocuments({}).session(session)) === 0;
-    const role = isFirstAccount ? "admin" : "user";
-
-    // Create a new user with the provided details
-    const user = new this.User({ name, email, password, role });
-    // Generate a verification token for the user
-    user.generateVerificationToken();
-    // Save the new user to the database within the session
-    await user.save({ session });
-
-    // Send a verification email to the new user
-    await this.EmailService.sendVerificationEmail(user);
-    return user;
   }
 }
 

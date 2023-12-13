@@ -20,14 +20,6 @@ const errorHandlerMiddleware = (err, req, res, next) => {
     statusCode: err.statusCode || 500, // Default to 500 if no specific status code is provided.
     msg: err.message || "Something went wrong try again later", // Default error message.
   };
-
-  // Uncomment this block if you want to specifically handle CustomError instances.
-  // This can be useful if you have defined custom error types extending from CustomError.
-  // if (err instanceof CustomError) {
-  //   customError.msg = err.message;
-  //   customError.statusCode = err.statusCode;
-  // }
-
   // Handle Mongoose validation errors (ValidationError).
   // These errors occur when a model validation fails (e.g., required fields missing).
   if (err.name === "ValidationError") {

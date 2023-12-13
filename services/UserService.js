@@ -45,20 +45,25 @@ class UserService {
    * @throws {BadRequest} If no changes are made to the user's email or name.
    */
   async updateUser(userId, email, name, session, res) {
-    const user = await this.User.findOne({ _id: userId }).session(session);
-    if (user.email === email && user.name === name) {
-      throw new BadRequest("No changes is made");
+    try {
+      const user = await this.User.findOne({ _id: userId }).session(session);
+      if (user.email === email && user.name === name) {
+        throw new BadRequest("No changes is made");
+      }
+      user.email = email;
+      user.name = name;
+      await user.save();
+
+      // Token generation and cookie setting
+      const tokens = user.generateTokens();
+      const { accessToken, refreshToken } = tokens;
+      cookiesHandler({ res, user, accessToken, refreshToken });
+
+      return user;
+    } catch (error) {
+      console.error("Error during user update:", error);
+      throw error;
     }
-    user.email = email;
-    user.name = name;
-    await user.save();
-
-    // Token generation and cookie setting
-    const tokens = user.generateTokens();
-    const { accessToken, refreshToken } = tokens;
-    cookiesHandler({ res, user, accessToken, refreshToken });
-
-    return user;
   }
 
   /**
@@ -71,14 +76,19 @@ class UserService {
    * @throws {Unauthenticated} If the old password is incorrect.
    */
   async updateUserPassword(userId, oldPassword, newPassword, session) {
-    const user = await this.User.findOne({ _id: userId }).session(session);
-    const isPasswordCorrect = await user.comparePassword(oldPassword);
-    if (!isPasswordCorrect) {
-      throw new Unauthenticated("Invalid Credentials");
+    try {
+      const user = await this.User.findOne({ _id: userId }).session(session);
+      const isPasswordCorrect = await user.comparePassword(oldPassword);
+      if (!isPasswordCorrect) {
+        throw new Unauthenticated("Invalid Credentials");
+      }
+      user.password = newPassword;
+      await user.save();
+      return user;
+    } catch (error) {
+      console.error("error during update password:", error);
+      throw error;
     }
-    user.password = newPassword;
-    await user.save();
-    return user;
   }
 }
 

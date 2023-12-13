@@ -21,52 +21,57 @@ class AuthService {
    * @throws {Unauthenticated} If credentials are invalid or email is not verified.
    */
   async login(email, password, req, res) {
-    // Validate email and password presence
-    if (!email || !password) {
-      throw new BadRequest("Email and password are required for login.");
-    }
-
-    // Retrieve user by email and check password validity
-    const user = await User.findByEmailOrFail(email);
-    const isPasswordCorrect = await user.comparePassword(password);
-
-    // Check if the provided password is correct
-    if (!isPasswordCorrect) {
-      throw new Unauthenticated("The provided credentials are incorrect.");
-    }
-
-    // Verify if the user's email is verified
-    if (!user.isVerified) {
-      throw new Unauthenticated("Your email address has not been verified.");
-    }
-
-    // Generate a new refresh token
-    let refreshToken = crypto.randomBytes(40).toString("hex");
-    let existingToken = await Token.findOne({ user: user._id });
-
-    // Update or create the token in the database
-    if (existingToken) {
-      if (!existingToken.isValid) {
-        throw new Unauthenticated(
-          "Your authentication credentials have expired."
-        );
+    try {
+      // Validate email and password presence
+      if (!email || !password) {
+        throw new BadRequest("Email and password are required for login.");
       }
-      existingToken.refreshToken = refreshToken;
-      await existingToken.save();
-    } else {
-      await Token.create({
-        user: user._id,
-        refreshToken,
-        userAgent: req.headers["user-agent"],
-        ip: req.ip,
-      });
+
+      // Retrieve user by email and check password validity
+      const user = await User.findByEmailOrFail(email);
+      const isPasswordCorrect = await user.comparePassword(password);
+
+      // Check if the provided password is correct
+      if (!isPasswordCorrect) {
+        throw new Unauthenticated("The provided credentials are incorrect.");
+      }
+
+      // Verify if the user's email is verified
+      if (!user.isVerified) {
+        throw new Unauthenticated("Your email address has not been verified.");
+      }
+
+      // Generate a new refresh token
+      let refreshToken = crypto.randomBytes(40).toString("hex");
+      let existingToken = await Token.findOne({ user: user._id });
+
+      // Update or create the token in the database
+      if (existingToken) {
+        if (!existingToken.isValid) {
+          throw new Unauthenticated(
+            "Your authentication credentials have expired."
+          );
+        }
+        existingToken.refreshToken = refreshToken;
+        await existingToken.save();
+      } else {
+        await Token.create({
+          user: user._id,
+          refreshToken,
+          userAgent: req.headers["user-agent"],
+          ip: req.ip,
+        });
+      }
+
+      // Generate an access token and set cookies
+      const accessToken = user.createJWT();
+      cookiesHandler({ res, user, accessToken, refreshToken });
+
+      return user.createTokenUser();
+    } catch (error) {
+      console.error("Login error:", error);
+      throw error;
     }
-
-    // Generate an access token and set cookies
-    const accessToken = user.createJWT();
-    cookiesHandler({ res, user, accessToken, refreshToken });
-
-    return user.createTokenUser();
   }
 
   /**
