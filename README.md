@@ -1,6 +1,8 @@
 **AuthenticRealm - Node.js Authentication Framework**
 AuthenticRealm is a comprehensive solution for handling user authentication and authorization in Node.js applications. It simplifies the process of implementing user registration, login, email verification, password reset, and role-based access control, making it ideal for rapid development.
 
+** search for **Code Examples** for In-depth explanation **
+
 **Features**
 User registration and email verification
 Secure user login with JWT token management
@@ -148,7 +150,7 @@ router.get('/protected-route', authenticateUser, authorizePermissions('admin'), 
 // In your Express route handler
 router.post('/verify-email', async (req, res) => {
 const { verificationToken, email } = req.body;
-try {
+
 const user = await User.findOne({ email });
 if (!user) {
 throw new Unauthenticated("Email verification failed.");
@@ -156,9 +158,7 @@ throw new Unauthenticated("Email verification failed.");
 user.verifyEmail(verificationToken);
 await user.save();
 res.status(200).json({ message: "Email successfully verified." });
-} catch (error) {
-res.status(500).json({ message: error.message });
-}
+
 });
 ```
 
@@ -168,7 +168,7 @@ res.status(500).json({ message: error.message });
 // In your Express route handler
 router.post('/forgot-password', async (req, res) => {
 const { email } = req.body;
-try {
+
 const user = await User.findOne({ email });
 if (user) {
 const resetToken = user.generatePasswordResetToken();
@@ -178,9 +178,7 @@ await EmailService.sendResetPasswordEmail(user, resetToken);
 res.status(200).json({
 message: "If an account with the provided email exists, a password reset link has been sent to it.",
 });
-} catch (error) {
-res.status(500).json({ message: error.message });
-}
+
 });
 ```
 
@@ -190,16 +188,14 @@ res.status(500).json({ message: error.message });
 // In your Express route handler
 router.post('/reset-password', async (req, res) => {
 const { token, email, password } = req.body;
-try {
+
 const user = await User.findOne({ email });
 if (user) {
 await user.resetPassword(token, password);
 await user.save();
 res.status(200).json({ message: "Your password has been successfully reset." });
 }
-} catch (error) {
-res.status(500).json({ message: error.message });
-}
+
 });
 ```
 
@@ -263,39 +259,293 @@ res.status(200).json({ message: "User updated successfully.", user: updatedUser 
 router.patch('/user/update', authenticateUser, updateUser);
 ```
 
-**More Examples:**
+**Code Examples:**
+
+**\*Controller example for auth:**
 
 ```
+// Import necessary services and utilities from the 'authenticrealm' framework.
 const {
   AuthService,
   RegisterService,
   EmailService,
   User,
+  sessionTransactionMiddleware,
+  BadRequest,
 } = require("authenticrealm");
 
-// Initialize services
+// Initialize the RegisterService and AuthService.
+// RegisterService is responsible for handling user registration processes.
+// AuthService handles login and logout functionalities.
 const registerService = new RegisterService(User, EmailService);
 const authService = new AuthService();
 
-// User registration controller
-const register = async (req, res) => {
-  await registerService.registerUser(req.body);
-  res.status(201).json({
-    msg: "Registration successful. Check your email for verification.",
-  });
-};
+/**
+ * User registration controller wrapped in sessionTransactionMiddleware.
+ * This middleware ensures that all database operations within this controller
+ * are part of a MongoDB transaction. This is crucial for maintaining data integrity,
+ * especially when operations depend on each other (like user creation and email sending).
+ */
+const register = sessionTransactionMiddleware(
+  async (req, res, next, session) => {
+    // The registration process is invoked with the request body.
+    // The session parameter ensures that this operation is part of the transaction.
+    await registerService.registerUser(req.body, session);
 
-// User login controller
+    // If the registration process is successful, send a 201 response.
+    res.status(201).json({
+      msg: "Registration successful. Check your email for verification.",
+    });
+  }
+);
+
+// User login controller.
+// This controller does not involve a transaction, as it's a straightforward authentication process.
 const login = async (req, res) => {
   const { email, password } = req.body;
   const user = await authService.login(email, password, req, res);
   res.status(200).json({ user, msg: "Login successful." });
 };
 
+// User logout controller.
+const logout = async (req, res) => {
+  // The authService.logout method logs out the user based on their ID.
+  await authService.logout(req.user.userId, res);
+  res.status(200).json({ msg: "You have been successfully logged out." });
+};
+
+// Email verification controller.
+// This controller allows users to verify their email address using a token sent to their email.
+const verifyEmail = async (req, res) => {
+  const { verificationToken, email } = req.body;
+  const user = await User.findByEmailOrFail(email);
+  user.verifyEmail(verificationToken);
+  await user.save();
+  res.status(200).json({ msg: "Email successfully verified." });
+};
+
+// Forgot password controller.
+// This controller handles the process of sending a password reset link to the user's email.
+const forgotPassword = async (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    throw new BadRequest("A valid email address is required.");
+  }
+  const user = await User.findOne({ email });
+  // If the user exists, generate a password reset token and send an email with the reset link.
+  if (user) {
+    const resetToken = user.generatePasswordResetToken();
+    await user.save();
+    await EmailService.sendResetPasswordEmail(user, resetToken);
+  }
+  // Send a response indicating that if an account exists, a reset link has been sent.
+  res.status(200).json({
+    msg: "If an account with the provided email exists, a password reset link has been sent to it.",
+  });
+};
+
+// Password reset controller.
+// This controller handles the actual password resetting using a token provided to the user.
+const resetPassword = async (req, res) => {
+  const { token, email, password } = req.body;
+  if (!token || !email || !password) {
+    throw new BadRequest("All fields are required to reset the password.");
+  }
+
+  // Find the user by email and reset their password using the provided token.
+  const user = await User.findOne({ email });
+  if (user) {
+    await user.resetPassword(token, password);
+    await user.save();
+    res.status(200).json({ msg: "Your password has been successfully reset." });
+  }
+};
+
+// Export the controllers to be used in routes.
 module.exports = {
   register,
   login,
+  logout,
+  verifyEmail,
+  forgotPassword,
+  resetPassword,
 };
+
+```
+
+**Routes example:**
+
+```
+const express = require("express");
+const router = express.Router();
+
+// Import authentication middleware from 'authenticrealm' framework.
+// This middleware is used to ensure that the user is authenticated for certain routes.
+const { authenticateUser } = require("authenticrealm");
+
+// Import controllers from the authController.
+// These controllers handle the various authentication and user account operations.
+const {
+  register,
+  verifyEmail,
+  login,
+  resetPassword,
+  forgotPassword,
+  logout,
+} = require("../controller/authController");
+
+// Define routes and associate them with their respective controllers.
+
+// Route for user registration.
+router.post("/register", register);
+
+// Route for user login.
+router.post("/login", login);
+
+// Route for user logout. The authenticateUser middleware ensures that only logged-in users can access this route.
+router.delete("/logout", authenticateUser, logout);
+
+// Route for email verification.
+router.post("/verify-email", verifyEmail);
+
+// Route for password reset request (forgot password).
+router.post("/forgot-password", forgotPassword);
+
+// Route for resetting the password.
+router.post("/reset-password", resetPassword);
+
+// Export the router to be used in the application.
+module.exports = router;
+
+```
+
+**User Controller:**
+
+```
+// Import necessary services, utilities, and custom errors from the 'authenticrealm' framework.
+const {
+  User,
+  NotFound,
+  BadRequest,
+  checkPermissions,
+  sessionTransactionMiddleware,
+  UserService,
+} = require("authenticrealm");
+
+// Initialize UserService with the User model to handle user-related operations.
+const userService = new UserService(User);
+
+// Controller for getting all users. This controller is typically used by admin users.
+const getAllUsers = async (req, res) => {
+  const users = await userService.getAllUsers();
+  res.status(200).json({ msg: "Users retrieved successfully.", users });
+};
+
+// Controller for getting a single user by their ID.
+const getSingleUser = async (req, res) => {
+  const user = await userService.getSingleUser(req.params.id);
+  if (!user) {
+    throw new NotFound(`User not found with id: ${req.params.id}`);
+  }
+  // Check if the authenticated user has permission to access this user's data.
+  checkPermissions(req.user, user._id);
+  res.status(200).json({ msg: "User retrieved successfully.", user });
+};
+
+// Controller to show the currently authenticated user's information.
+const showCurrentUser = async (req, res) => {
+  res.status(200).json({ msg: "Current user information.", user: req.user });
+};
+
+// Controller for updating user details, wrapped in sessionTransactionMiddleware to ensure transactional integrity.
+const updateUser = sessionTransactionMiddleware(
+  async (req, res, next, session) => {
+    const { email, name } = req.body;
+    if (!email || !name) {
+      throw new BadRequest(
+        "Email and name are required for updating user details."
+      );
+    }
+    const updatedUser = await userService.updateUser(
+      req.user.userId,
+      email,
+      name,
+      session,
+      res
+    );
+    res
+      .status(200)
+      .json({ msg: "User details updated successfully.", updatedUser });
+  }
+);
+
+// Controller for updating the user's password, also wrapped in sessionTransactionMiddleware.
+const updateUserPassword = sessionTransactionMiddleware(
+  async (req, res, next, session) => {
+    const { oldPassword, newPassword } = req.body;
+    if (!oldPassword || !newPassword) {
+      throw new BadRequest("Both old and new passwords should be provided");
+    }
+    await userService.updateUserPassword(
+      req.user.userId,
+      oldPassword,
+      newPassword,
+      session
+    );
+    res.status(200).json({ msg: "Password updated successfully" });
+  }
+);
+
+// Export the controllers to be used in the routes file.
+module.exports = {
+  getAllUsers,
+  getSingleUser,
+  showCurrentUser,
+  updateUser,
+  updateUserPassword,
+};
+
+```
+
+**User routes example:**
+
+```
+const express = require("express");
+const router = express.Router();
+
+// Import authentication and authorization middleware from 'authenticrealm'.
+const { authenticateUser, authorizePermissions } = require("authenticrealm");
+
+// Import user-related controllers.
+const {
+  getAllUsers,
+  getSingleUser,
+  showCurrentUser,
+  updateUser,
+  updateUserPassword,
+} = require("../controller/userController");
+
+// Define user-related routes and associate them with their respective controllers.
+
+// Route to get all users. Accessible only by admin users.
+router
+  .route("/")
+  .get(authenticateUser, authorizePermissions("admin"), getAllUsers);
+
+// Route for the current user to view their own information.
+router.route("/myInfo").get(authenticateUser, showCurrentUser);
+
+// Route for the current user to update their details.
+router.route("/updateUser").patch(authenticateUser, updateUser);
+
+// Route for the current user to update their password.
+router.route("/updateUserPassword").patch(authenticateUser, updateUserPassword);
+
+// Route to get a single user by ID. Requires authentication.
+router.route("/:id").get(authenticateUser, getSingleUser);
+
+// Export the router to be used in the main application.
+module.exports = router;
 
 ```
 
