@@ -1,3 +1,4 @@
+const { BadRequest } = require("../errors");
 /**
  * RegisterService class to handle user registration logic.
  * This class encapsulates the functionality for registering a new user,
