@@ -263,6 +263,42 @@ res.status(200).json({ message: "User updated successfully.", user: updatedUser 
 router.patch('/user/update', authenticateUser, updateUser);
 ```
 
+**More Examples:**
+
+```
+const {
+  AuthService,
+  RegisterService,
+  EmailService,
+  User,
+} = require("authenticrealm");
+
+// Initialize services
+const registerService = new RegisterService(User, EmailService);
+const authService = new AuthService();
+
+// User registration controller
+const register = async (req, res) => {
+  await registerService.registerUser(req.body);
+  res.status(201).json({
+    msg: "Registration successful. Check your email for verification.",
+  });
+};
+
+// User login controller
+const login = async (req, res) => {
+  const { email, password } = req.body;
+  const user = await authService.login(email, password, req, res);
+  res.status(200).json({ user, msg: "Login successful." });
+};
+
+module.exports = {
+  register,
+  login,
+};
+
+```
+
 **User Model Methods:**
 
 **comparePassword(userPassword)**

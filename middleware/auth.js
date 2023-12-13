@@ -1,7 +1,7 @@
 const jwt = require("jsonwebtoken");
 const { Unauthorized, Unauthenticated } = require("../errors");
 const Token = require("../models/Token");
-const { User } = require("../models/User");
+const User = require("../models/User");
 const cookiesHandler = require("../utils/cookies");
 
 /**

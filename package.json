@@ -1,6 +1,6 @@
 {
   "name": "authenticrealm",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Comprehensive authentication and authorization framework for Node.js applications, supporting user registration, login, email verification, password reset, and role-based access control.",
   "main": "index.js",
   "repository": {
