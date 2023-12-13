@@ -1,5 +1,5 @@
 // Import utilities
-const { cookiesHandler } = require("../utils/cookies");
+const cookiesHandler = require("../utils/cookies");
 const { BadRequest, Unauthenticated } = require("../errors");
 
 /**
